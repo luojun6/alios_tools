@@ -1,6 +1,7 @@
 triage/
 *.csv
-.csv
+.DS_Store
+log_focus.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
