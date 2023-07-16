@@ -1,0 +1,93 @@
+sendlink page://login.ivi.com/loginservice -e passwdlogin -d '{"name": "17000000008","password":"72hsh7*banma"}'
+
+sys-test --get-ver
+getprop ro.build.version.release
+
+logctl -b selected > log.txt
+
+echo "enable 0;" >/proc/alog
+echo "enable y;" >/proc/alog
+cat /dev/alog_audit
+
+./adb -host reboot fastboot
+
+fastboot flash boot_a boot.img
+fastboot flash boot_b boot.img
+fastboot reboot
+
+cat /sys/class/backlight/lcd-backlight/brightness
+echo 100 >  /sys/class/backlight/lcd-backlight/brightness
+
+adb -host  logctl -p 2,3,4
+
+adb -host remount
+adb -host push i2cdump /usr/bin
+adb -host shell
+echo enable 0 > /proc/alog
+chmod +x /usr/bin/i2cdump
+
+vapisend -get ctrl.light.side_status
+vapisend -get ctrl.sys.power_status
+
+cat /proc/alise_info 
+cat /dev/alog_audit 
+
+systemctl --type=service --state=running
+
+打开：setprop persist.audio.dump io
+复现现象
+关闭：setprop persist.audio.dump 0
+
+
+# Master_Reset
+echo 2:IPCL_EOL_CMD_EVENT:1538,1>/sys/class/ipcl/debug/fake_uevent
+
+getevent -l /dev/input/event1
+
+echo 15 > /proc/sys/kernel/printk
+echo 7 > /proc/sys/kernel/printk
+echo 7 > /sys/class/ipcl/debug/debug_level
+dmesg -n8
+
+sudo picocom -b 921600 /dev/ttyUSB0
+ts </dev/ttyUSB0 > mt2712_serial.log
+
+echo 0 > /dev/wmtWifi  移除wlan0和ap0
+echo 1 > /dev/wmtWifi 创建wlan0
+echo AP > /dev/wmtWifi  创建ap0
+
+// Closed ecall
+echo 1:IPCL_CAN_SIGNAL_EVENT:989,0> /sys/class/ipcl/debug/fake_uevent
+
+
+cat /proc/interrupts | grep eth
+echo 2 > /proc/irq/263/smp_affinity
+
+ta_path: /lib/optee_armtz/
+
+../adb -host push ./alisec_patch/asecpolicy.bin /etc/security
+
+grep -iE "reset|calib|LSM|security|alisec|asecpolicy|boot|ipcl|eth|alintgr"
+
+grep -iE "reset|calib|LSM|security|alisec|asecpolicy|boot|ipcl|eth|alintgr"
+
+debuggerd -b `pidof standsrv` > /private/standsrv.bt.log
+
+strace -t -o /private/srv_pid.log -p
+
+gdb --batch -ex "thread apply all bt" -p `pidof   standsrv` 
+
+adb -host shell atrace wm pm vm perf sched freq idle irq fusion  > atrace.log
+
+1.拉取场景引擎脚本
+adb -host pull /private/jarvis .
+
+2.打开场景引擎开机启动日志开关
+adb -host remount
+adb -host shell "echo 'enable n;' > /proc/alog && mount -o remount,rw /"
+adb -host shell "setprop persist.sys.jarvis.logdebug 1"
+adb -host shell "setprop persist.sys.jarvis.logfile 'true'"
+adb -host shell "rm -rf /tmp/jarvisd.log"
+
+3.重启之后，场景引擎开机日志记录在/tmp/jarvisd.log   ，拉取出来即可，每次重启都会覆盖
+
