@@ -30,7 +30,12 @@ adb -host shell "echo 'enable n;' > /proc/alog && mount -o remount,rw /"
 ### Logging
 
 ```sh
-adb -host  logctl -p 2,3,4
+adb -host shell dmesg --follow --time-format iso
+adb -host shell dmesg --follow --time-format iso > dmesg.log
+```
+
+```sh
+adb -host logctl -p 2,3,4
 ```
 
 _In adb shell_
@@ -73,6 +78,12 @@ adb -host push ./alisec_patch/asecpolicy.bin /etc/security
 ```
 
 ## BSP
+
+### YFVE Camera TVI/AHD parameter
+
+```sh
+i2cdump -f -y 1 0x44
+```
 
 ### Display
 
@@ -162,6 +173,12 @@ echo 2 > /proc/irq/263/smp_affinity
 
 ## Debugging
 
+### Capture Screenshot
+
+```sh
+uiautomator_screencap
+```
+
 ### Debug Logging
 
 ```sh
@@ -180,6 +197,11 @@ gdb --batch -ex "thread apply all bt" -p `pidof standsrv`
 ```
 
 ### Video
+
+```sh
+mkdir /data/camera
+setprop camera.client.dump 10 # Data will be stored in /data/camera
+```
 
 ```sh
 videocap -r -c 0 -t 10  -p /tmp/videocap.yuv
