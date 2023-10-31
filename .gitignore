@@ -1,4 +1,5 @@
 triage/
+logs/
 *.csv
 .DS_Store
 log_focus.csv
