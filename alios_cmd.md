@@ -9,6 +9,7 @@ adb -host shell
 ### Fastboot
 
 ```sh
+adb -host reboot recovery
 adb -host reboot fastboot
 ```
 
@@ -85,12 +86,21 @@ adb -host push ./alisec_patch/asecpolicy.bin /etc/security
 i2cdump -f -y 1 0x44
 ```
 
+```sh
+i2cset -f -y 1 0x44 0x40 0x04
+```
+
 ### Display
 
 ```sh
 cat /sys/class/backlight/lcd-backlight/brightness
 echo 100 >  /sys/class/backlight/lcd-backlight/brightness
 ```
+
+EP39EV_FICMDayNightMd_CMD = 870,
+EP39EV_ClstrDayNightMd_MSG = 1263,
+EP39ER_FICMDayNightMd_CMD = 771,
+EP39ER_ClstrDayNightMd_MSG = 1021,
 
 ### Touch Panel
 
@@ -102,7 +112,7 @@ getevent -l /dev/input/event1
 
 ```sh
 sudo picocom -b 921600 /dev/ttyUSB0
-ts </dev/ttyUSB0 > mt2712_serial.log
+
 ```
 
 ### Wifi
@@ -177,6 +187,11 @@ echo 2 > /proc/irq/263/smp_affinity
 
 ```sh
 uiautomator_screencap
+```
+
+```sh
+adb -host shell weston-screenshooter
+adb -host pull /data/screenshot.png
 ```
 
 ### Debug Logging
@@ -267,3 +282,42 @@ adb -host shell "rm -rf /tmp/jarvisd.log"
 setprop persist.sys.aui.extend.setting hdt
 setprop persist.sys.aui.extend.setting hdt_light
 ```
+
+## Keywords in logcat
+
+background light power: bl_power
+
+power management:
+
+- PMRC_REQ_PWR_MODE_CHG
+- PMRC_PM2PA_INFO_30MIN_TIMEOUT
+- V850 Send PMRC_REQ_SYSTEM_OFF
+
+cat all_log.log | grep -vE "PM2PA_INFO_REP_VOLTAGE" | grep -iE "PMRC_REQ_PWR_MODE_CHG|V850 Send|IPCL_CAN_SIGNAL_EVENT:50,|IPCL_CAN_SIGNAL_EVENT:200,|IPCL_CAN_SIGNAL_EVENT:10,|IPCL_CAN_SIGNAL_EVENT:11,|IPCL_CAN_SIGNAL_EVENT:1075,|ctrl.custom.536880839"
+
+cat all_log.log
+
+## Check fdisk exploded
+
+```sh
+du -sm *
+```
+
+## Debug RVC TVD
+
+```sh
+echo regw:0x14013434=0x040000ff > /sys/kernel/debug/mtkdrm
+echo regw:0x14013434=0x04ff0080 > /sys/kernel/debug/mtkdrm
+echo regw:0x14013434=0x04000080 > /sys/kernel/debug/mtkdrm
+```
+
+echo regw:0x14013434=0x04000080 > /sys/kernel/debug/mtkdrm
+两种范围：
+04000080 -- 0x07ff0080
+或者
+04000080 -- 0x040000ff
+两种范围，第一种 080 是最大亮度，第二种 0ff 是最大亮度
+
+# echo regw:0x14013434=0x040000dd > /sys/kernel/debug/mtkdrm -> EP39 Executed only
+
+# echo regw:0x14013434=0x04ff0080 > /sys/kernel/debug/mtkdrm
