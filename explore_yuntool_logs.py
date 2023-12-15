@@ -1,5 +1,6 @@
 import pandas as pd
 import os, sys
+import zstandard
 
 # current_dir = os.path.dirname(__file__)
 current_dir = os.getcwd()
@@ -89,6 +90,9 @@ def extract_zst_files(dir_name, log_type):
         except pd.errors.EmptyDataError:
                 print(f"Note: {key} was empty. Skipping.")
                 continue # will skip the rest of the block and move to next file
+        except zstandard.ZstdError as e:
+            print(f"Failed to extrat {key}, skipped.")
+            print(f"{e}")
     print("Extraction completed.")
 
 def extract_gz_files(dir_name, log_type):
@@ -113,6 +117,7 @@ def extract_gz_files(dir_name, log_type):
         except pd.errors.EmptyDataError:
                 print(f"Note: {key} was empty. Skipping.")
                 continue # will skip the rest of the block and move to next file
+            
     print("Extraction completed.")
     
 def merge_log_csv_files(dir_name, inclusive_keyword=None):
