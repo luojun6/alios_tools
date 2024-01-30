@@ -120,23 +120,40 @@ def extract_gz_files(dir_name, log_type):
             
     print("Extraction completed.")
     
-def merge_log_csv_files(dir_name, inclusive_keyword=None):
-    all_csv_dict = get_file_by_suffix("csv", dir_name=dir_name,  inclusive_keyword=inclusive_keyword)
-    all_log = pd.DataFrame()
-    count = len(all_csv_dict)
-    i = 0
-    print(f"Found {count} txt.gz files.")
     
-    for key in all_csv_dict.keys():
+    
+def merge_all_logs(dir_name, file_type="csv", inclusive_keyword=None, 
+                   exclusive_keyword=None, 
+                   exclusive_keywords=["systeminfo", "eventlog", "pstore"], 
+                   output_file_path=None):
+    all_log_dict = get_file_by_suffix(file_type, dir_name=dir_name,  inclusive_keyword=inclusive_keyword, exclusive_keyword=exclusive_keyword)
+    all_log = pd.DataFrame()
+    count = len(all_log_dict)
+    i = 0
+    print(f"Found {count} {file_type} log files.")
+    
+    for key in all_log_dict.keys():
         i += 1
         print(f"Merging {key} with completion {i}/{count}.")
-        temp_log = pd.read_csv(all_csv_dict[key], encoding = "ISO-8859-1", low_memory=False)
-        all_log = pd.concat([all_log, temp_log])
-    all_log.sort_values(by=["timestamp"], inplace=True)
+        if exclusive_keywords:
+            for ek in exclusive_keywords:
+                if ek in key:
+                    print(f"Skipped file {key} because it contains key word {ek}.")
+                    continue
+        if file_type == "csv":
+            temp_log = pd.read_csv(all_log_dict[key], encoding = "ISO-8859-1", low_memory=False)
+        elif file_type == "txt":
+            try:
+                temp_log = pd.read_fwf(all_log_dict[key], encoding = "ISO-8859-1", header=None, colspecs="infer")
+                temp_log.rename(columns=rename_zst_cols, inplace=True)
+                all_log = pd.concat([all_log, temp_log])
+            except Exception as e:
+                print(f"ERROR: {e}")
+            
+        
+    all_log.sort_values(by=[date, timestamp], inplace=True)
     print("Merging compeleted.")
     
-    if inclusive_keyword is None:
-        inclusive_keyword = "all_log"
-    output_file_path = inclusive_keyword + ".csv"
-    all_log.to_csv(output_file_path, encoding = "ISO-8859-1", index=None)
+    if output_file_path is not None:
+        all_log.to_csv(output_file_path, encoding = "ISO-8859-1", index=None)
     return all_log

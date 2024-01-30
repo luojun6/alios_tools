@@ -321,3 +321,39 @@ echo regw:0x14013434=0x04000080 > /sys/kernel/debug/mtkdrm
 # echo regw:0x14013434=0x040000dd > /sys/kernel/debug/mtkdrm -> EP39 Executed only
 
 # echo regw:0x14013434=0x04ff0080 > /sys/kernel/debug/mtkdrm
+
+```sh
+因为接收camera数据、算法处理、显示输出是同时运行的异步线程，所以不能简单看 “收到数据 -> 算法开始处理   -> 开始输出到显示渲染”的耗时相减得到的结果，因为可能在一个时间点算法处理的是当前帧，而算法处理的是上一帧；
+可以通过logctl 查看camera帧率、算法帧率来查看360的运行耗时：
+camer帧率：（约30fps）
+12-13 07:37:10.638  4  1542  8862 I SRV:  ShowFPS,CameraUtils.cpp,L22: cameraID: 2, cameraFps: 29.2
+算法帧率：
+命令执行logctl | grep srv_algo
+显示帧率：（12-13 07:37:09.485 - 12-13 07:37:09.451 = 34ms， 30帧）
+12-13 07:37:09.451  1  1542  2481 I SRV:  doReady,Window.cpp,L154: Window setVisibility true
+12-13 07:37:09.485  1  1542  2481 I SRV:  doReady,Window.cpp,L154: Window setVisibility true
+
+
+1.1 360收到摄像头数据（四路）：
+12-13 07:37:09.435  2  1542  8868 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=1, StreamData address=0x7f80025af0, data->vaddr=0x7f391e8000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+12-13 07:37:09.437  2  1542  8862 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=2, StreamData address=0x7f6400f590, data->vaddr=0x7f37f26000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+12-13 07:37:09.437  2  1542  8880 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=3, StreamData address=0x7f700154a0, data->vaddr=0x7f3395c000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+12-13 07:37:09.439  4  1542  8874 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=4, StreamData address=0x7f70014e90, data->vaddr=0x7f3380a000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+
+12-13 07:37:09.468  2  1542  8868 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=1, StreamData address=0x7f680069a0, data->vaddr=0x7f38f23000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+12-13 07:37:09.469  4  1542  8874 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=4, StreamData address=0x7f68006bc0, data->vaddr=0x7f336b8000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+12-13 07:37:09.470  4  1542  8862 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=2, StreamData address=0x7f68006560, data->vaddr=0x7f3a1b2000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+12-13 07:37:09.472  4  1542  8880 I SRV:  OnPreviewTaken,CameraWrapper.cpp,L163: OnPreviewTaken, cameraId=3, StreamData address=0x7f700152f0, data->vaddr=0x7f310ab000, data->dataSize=0, data->info.imgSize=1382400, data->info.width=1280, data->info.height=720, data->info.stride=0
+
+1.2 算法开始处理：
+12-13 07:37:09.443  5  1542  2804 I SRV:  process,ZsvLinerPrivateData2.cpp,L558: m_zsv_vehicle_data size 1  push speed: 0 f_wheel_angle f_l: 2.0073 f_r: 1.75048 b_l: -0 b_r: -0 f_l_speed: 0 f_r_speed: 0 b_l_speed: 0 b_r_speed: 0 _vehicle_speed:  0 _left_run_wheel_speed: 0 _right_run_wheel_speed: 0 _left_wheel_speed: 0 _right_wheel_speed: 0 _elec_speed: 0 timestamp 996329538365
+12-13 07:37:09.480  5  1542  2804 I SRV:  process,ZsvLinerPrivateData2.cpp,L558: m_zsv_vehicle_data size 1  push speed: 0 f_wheel_angle f_l: 2.0073 f_r: 1.75048 b_l: -0 b_r: -0 f_l_speed: 0 f_r_speed: 0 b_l_speed: 0 b_r_speed: 0 _vehicle_speed:  0 _left_run_wheel_speed: 0 _right_run_wheel_speed: 0 _left_wheel_speed: 0 _right_wheel_speed: 0 _elec_speed: 0 timestamp 996366573596
+
+
+1.3 输入算法到算法处理完成输出：
+暂无log
+
+1.4 360输出到显示渲染：
+12-13 07:37:09.451  1  1542  2481 I SRV:  doReady,Window.cpp,L154: Window setVisibility true
+12-13 07:37:09.485  1  1542  2481 I SRV:  doReady,Window.cpp,L154: Window setVisibility true
+```
